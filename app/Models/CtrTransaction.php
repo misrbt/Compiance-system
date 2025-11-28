@@ -17,12 +17,13 @@ class CtrTransaction extends Model
         'transaction_amount',
         'transaction_code_id',
         'transaction_date',
+        'transaction_time',
     ];
 
     protected function casts(): array
     {
         return [
-            'transaction_date' => 'date',
+            'transaction_date' => 'date:Y-m-d',
             'transaction_amount' => 'decimal:2',
         ];
     }

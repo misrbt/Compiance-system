@@ -64,13 +64,87 @@ export default function View({ report, filterPartyId, partyTransactions = [] }) 
         return report;
     }, [filterPartyId, partyTransactions, report]);
 
+    const parseNaiveDateTime = (input) => {
+        if (!input) {
+            return null;
+        }
+
+        const isoLike = input.match(
+            /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$/
+        );
+
+        if (isoLike) {
+            const [, y, m, d, hh, mm, ss = "00"] = isoLike;
+            return {
+                y,
+                m,
+                d,
+                hh,
+                mm,
+                ss,
+            };
+        }
+
+        const ymd = input.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (ymd) {
+            const [, y, m, d] = ymd;
+            return { y, m, d, hh: "00", mm: "00", ss: "00" };
+        }
+
+        return null;
+    };
+
     const formatDate = (date) => {
-        if (!date) return "—";
-        return new Date(date).toLocaleDateString("en-US", {
+        if (!date) {
+            return "--";
+        }
+
+        const parsed = parseNaiveDateTime(date);
+        if (parsed) {
+            return `${parsed.m}/${parsed.d}/${parsed.y}`;
+        }
+
+        const fallback = new Date(date);
+        if (Number.isNaN(fallback.getTime())) {
+            return date;
+        }
+
+        return fallback.toLocaleDateString("en-US", {
             year: "numeric",
-            month: "short",
-            day: "numeric",
+            month: "2-digit",
+            day: "2-digit",
         });
+    };
+
+    const formatDateTime = (date, time) => {
+        if (!date) {
+            return "--";
+        }
+
+        // Format the date
+        const dateFormatted = formatDate(date);
+
+        // Format the time if provided
+        let timeFormatted = "--";
+        if (time) {
+            // Parse time string (HH:MM:SS or HH:MM format)
+            const timeMatch = time.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
+            if (timeMatch) {
+                const hourNum = parseInt(timeMatch[1], 10);
+                const minutes = timeMatch[2];
+                const seconds = timeMatch[3] || "00";
+                const hour12 = ((hourNum + 11) % 12) + 1;
+                const meridiem = hourNum >= 12 ? "PM" : "AM";
+                timeFormatted = `${hour12}:${minutes}:${seconds} ${meridiem}`;
+            }
+        }
+
+        return (
+            <div className="flex flex-col">
+                <span className="font-medium">{dateFormatted}</span>
+                <span className="text-xs text-gray-500">{timeFormatted}</span>
+            </div>
+        );
     };
 
     const formatCurrency = (amount) => {
@@ -358,8 +432,8 @@ export default function View({ report, filterPartyId, partyTransactions = [] }) 
                                             <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
                                                 {(page - 1) * pageSize + index + 1}
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
-                                                {formatDate(transaction.transaction_date)}
+                                            <td className="px-6 py-4 text-sm text-gray-900">
+                                                {formatDateTime(transaction.transaction_date, transaction.transaction_time)}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-900">
                                                 {transaction.transaction_reference_no || "—"}

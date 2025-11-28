@@ -238,6 +238,7 @@ class CtrReportController extends Controller
             'transactions.*.transaction_amount' => 'required|numeric|min:0',
             'transactions.*.transaction_code_id' => 'nullable|exists:transaction_codes,id',
             'transactions.*.transaction_date' => 'nullable|date',
+            'transactions.*.transaction_time' => 'nullable|date_format:H:i:s,H:i',
             'transactions.*.account_number' => 'nullable|string',
             'transactions.*.parties' => 'required|array',
             'transactions.*.parties.*.party_flag_id' => 'required|exists:party_flags,id',
@@ -388,6 +389,19 @@ class CtrReportController extends Controller
         $this->authorize('update', $report);
 
         $validated = $request->validated();
+
+        // Debug logging - see what we received from frontend
+        \Log::info('🔍 CtrReportController::updateTransactions - Request Data', [
+            'report_id' => $report->id,
+            'transactions_count' => count($validated['transactions']),
+            'transactions' => array_map(function ($t) {
+                return [
+                    'transaction_id' => $t['transaction_id'] ?? null,
+                    'transaction_date' => $t['transaction_date'] ?? null,
+                    'transaction_amount' => $t['transaction_amount'] ?? null,
+                ];
+            }, $validated['transactions']),
+        ]);
 
         $report->update([
             'report_type' => $validated['report_type'],
@@ -586,6 +600,7 @@ class CtrReportController extends Controller
             'transaction_amount' => 'required|numeric|min:0',
             'transaction_code_id' => 'required|exists:transaction_codes,id',
             'transaction_date' => 'required|date',
+            'transaction_time' => 'nullable|date_format:H:i:s,H:i',
 
             'participating_banks' => 'nullable|array',
             'participating_banks.*.participating_bank_id' => 'required_with:participating_banks|exists:participating_banks,id',

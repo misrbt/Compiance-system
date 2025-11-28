@@ -32,6 +32,7 @@ class UpdateTransactionsRequest extends FormRequest
             'transactions.*.transaction_amount' => 'required|numeric|min:0',
             'transactions.*.transaction_code_id' => 'nullable|exists:transaction_codes,id',
             'transactions.*.transaction_date' => 'nullable|date',
+            'transactions.*.transaction_time' => 'nullable|date_format:H:i:s,H:i',
             'transactions.*.account_number' => 'nullable|string',
         ];
     }

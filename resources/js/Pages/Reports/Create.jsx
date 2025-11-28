@@ -116,6 +116,7 @@ export default function Create({ reportType, transactionType, referenceData }) {
                 transaction_amount: "",
                 transaction_code_id: getDefaultTransactionCodeId(),
                 transaction_date: "",
+                transaction_time: "",
                 account_number: "",
                 parties: getDefaultParties(),
                 participating_banks: [{}],
@@ -258,38 +259,42 @@ export default function Create({ reportType, transactionType, referenceData }) {
         // Set submission date before posting
         const currentDate = new Date().toISOString().split("T")[0];
 
-        // First update the form data with submission date
-        setData("submission_date", currentDate);
+        // Prepare data for submission
+        const submissionData = {
+            ...data,
+            submission_date: currentDate,
+        };
 
-        // Use setTimeout to ensure state is updated before posting
-        setTimeout(() => {
-            post("/reports", {
-                onSuccess: () => {
+        console.log("  📤 Final submissionData:", submissionData);
+
+        // Post the form directly with the data
+        post("/reports", {
+            data: submissionData,
+            onSuccess: () => {
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: "Report created successfully",
+                });
+            },
+            onError: (errors) => {
+                // Check if there's a duplicate party error
+                if (errors.duplicate_party) {
                     Swal.fire({
-                        icon: "success",
-                        title: "Success",
-                        text: "Report created successfully",
+                        icon: "error",
+                        title: "Duplicate Party Detected",
+                        text: errors.duplicate_party,
+                        confirmButtonColor: "#d33",
                     });
-                },
-                onError: (errors) => {
-                    // Check if there's a duplicate party error
-                    if (errors.duplicate_party) {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Duplicate Party Detected",
-                            text: errors.duplicate_party,
-                            confirmButtonColor: "#d33",
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Error",
-                            text: "Please check all required fields",
-                        });
-                    }
-                },
-            });
-        }, 100);
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "Please check all required fields",
+                    });
+                }
+            },
+        });
     };
 
     // Check if participating banks section should be shown based on transaction type and MOT

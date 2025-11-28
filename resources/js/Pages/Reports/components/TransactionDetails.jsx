@@ -106,10 +106,28 @@ export default function TransactionDetails({
                     </label>
                     <input
                         type="date"
-                        value={data.transactions[0].transaction_date}
+                        value={data.transactions[0].transaction_date || ''}
                         onChange={(e) =>
                             updateTransaction(
                                 "transaction_date",
+                                e.target.value
+                            )
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#002868]"
+                    />
+                </div>
+
+                <div>
+                    <label className="block mb-1 text-sm font-medium text-gray-700">
+                        Transaction Time
+                    </label>
+                    <input
+                        type="time"
+                        step="1"
+                        value={data.transactions[0].transaction_time || ''}
+                        onChange={(e) =>
+                            updateTransaction(
+                                "transaction_time",
                                 e.target.value
                             )
                         }

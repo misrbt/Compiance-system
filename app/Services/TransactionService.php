@@ -21,6 +21,7 @@ class TransactionService
             'transaction_amount' => $transactionData['transaction_amount'],
             'transaction_code_id' => $transactionData['transaction_code_id'] ?? null,
             'transaction_date' => $transactionData['transaction_date'] ?? null,
+            'transaction_time' => $transactionData['transaction_time'] ?? null,
         ]);
 
         // Create and attach all parties to this transaction
@@ -53,6 +54,7 @@ class TransactionService
             'transaction_amount' => $transactionData['transaction_amount'],
             'transaction_code_id' => $transactionData['transaction_code_id'],
             'transaction_date' => $transactionData['transaction_date'] ?? null,
+            'transaction_time' => $transactionData['transaction_time'] ?? null,
         ]);
 
         // Attach parties to transaction (support both single party and multiple parties)
@@ -71,12 +73,26 @@ class TransactionService
      */
     public function updateTransaction(CtrTransaction $transaction, array $transactionData): void
     {
+        // Debug logging
+        \Log::info('🔍 TransactionService::updateTransaction', [
+            'transaction_id' => $transaction->id,
+            'transaction_date_before' => $transaction->transaction_date,
+            'transaction_date_received' => $transactionData['transaction_date'] ?? null,
+            'transaction_date_type' => gettype($transactionData['transaction_date'] ?? null),
+        ]);
+
         $transaction->update([
             'transaction_reference_no' => $transactionData['transaction_reference_no'] ?? null,
             'mode_of_transaction_id' => $transactionData['mode_of_transaction_id'] ?? null,
             'transaction_amount' => $transactionData['transaction_amount'],
             'transaction_code_id' => $transactionData['transaction_code_id'] ?? null,
             'transaction_date' => $transactionData['transaction_date'] ?? null,
+            'transaction_time' => $transactionData['transaction_time'] ?? null,
+        ]);
+
+        \Log::info('✅ TransactionService::updateTransaction completed', [
+            'transaction_id' => $transaction->id,
+            'transaction_date_after' => $transaction->fresh()->transaction_date,
         ]);
     }
 

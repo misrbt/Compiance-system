@@ -20,8 +20,11 @@ export default function DataEntry({ referenceData, preselectedParty }) {
         transaction_amount: "",
         transaction_code_id: "",
         transaction_date: "",
+        transaction_time: "",
         participating_banks: [],
     });
+
+
 
     // Search for parties (autocomplete)
     useEffect(() => {
@@ -86,6 +89,8 @@ export default function DataEntry({ referenceData, preselectedParty }) {
         setData("participating_banks", updatedBanks);
     };
 
+
+
     // Simplified participating banks logic for Data Entry
     // Show when MOT is 2 (Check) or 3 (Multiple Checks)
     const shouldShowParticipatingBanks = useMemo(() => {
@@ -120,17 +125,35 @@ export default function DataEntry({ referenceData, preselectedParty }) {
         }
     }, [shouldShowParticipatingBanks, data.participating_banks.length, setData]);
 
+    const combineDateAndTime = () => {
+        if (!data.transaction_date) {
+            return "";
+        }
+
+        const time = data.transaction_time || "00:00:00";
+        const [hh = "00", mm = "00", ss = "00"] = time.split(":");
+        const safeTime = `${hh.padStart(2, "0")}:${mm.padStart(2, "0")}:${ss.padStart(2, "0")}`;
+
+        return `${data.transaction_date} ${safeTime}`;
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
         const currentDate = new Date().toISOString().split("T")[0];
 
-        // Post with updated submission_date
+        // Prepare submission data
+        const submissionData = {
+            ...data,
+            submission_date: currentDate,
+            transaction_date: combineDateAndTime(),
+        };
+
+        console.log("  📤 Final submissionData:", submissionData);
+
+        // Post the form directly with the data
         post("/reports/quick-transaction", {
-            data: {
-                ...data,
-                submission_date: currentDate,
-            },
+            data: submissionData,
             onError: (errors) => {
                 // Get first error message
                 const firstError = Object.values(errors)[0];
@@ -416,6 +439,32 @@ export default function DataEntry({ referenceData, preselectedParty }) {
                                     {errors.transaction_date && (
                                         <p className="mt-1 text-sm text-red-600">
                                             {errors.transaction_date}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Transaction Time */}
+                                <div>
+                                    <label className="block mb-2 text-sm font-medium text-gray-700">
+                                        Transaction Time{" "}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="time"
+                                        step="1"
+                                        value={data.transaction_time}
+                                        onChange={(e) =>
+                                            setData(
+                                                "transaction_time",
+                                                e.target.value
+                                            )
+                                        }
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#002868]"
+                                        required
+                                    />
+                                    {errors.transaction_time && (
+                                        <p className="mt-1 text-sm text-red-600">
+                                            {errors.transaction_time}
                                         </p>
                                     )}
                                 </div>

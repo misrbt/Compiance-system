@@ -12,39 +12,90 @@ export default function EditTransaction({
     partyName,
 }) {
 
-    // Helper function to format date for input[type="date"]
-    const formatDateForInput = (date) => {
-        if (!date) return "";
-        if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-            return date;
+    // No need for datetime conversion anymore - separate date and time fields
+
+    // Format date helper function (same as View.jsx)
+    const formatDate = (date) => {
+        if (!date) {
+            return "Not set";
         }
-        try {
-            const d = new Date(date);
-            return d.toISOString().split("T")[0];
-        } catch {
+
+        // Parse naive datetime format
+        const isoLike = date.match(
+            /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$/
+        );
+
+        if (isoLike) {
+            const [, y, m, d] = isoLike;
+            return `${m}/${d}/${y}`;
+        }
+
+        // Fallback to default parsing
+        const fallback = new Date(date);
+        if (!isNaN(fallback.getTime())) {
+            return fallback.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+            });
+        }
+
+        return date;
+    };
+
+    // Format time helper function
+    const formatTime = (time) => {
+        if (!time) {
             return "";
         }
+
+        // Parse time string (HH:MM:SS or HH:MM format)
+        const timeMatch = time.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
+        if (timeMatch) {
+            const hourNum = parseInt(timeMatch[1], 10);
+            const minutes = timeMatch[2];
+            const seconds = timeMatch[3] || "00";
+            const hour12 = ((hourNum + 11) % 12) + 1;
+            const meridiem = hourNum >= 12 ? "PM" : "AM";
+            return `${hour12}:${minutes}:${seconds} ${meridiem}`;
+        }
+
+        return time;
     };
+
+    // Debug: Log the raw transaction data from the server
+    console.log("📊 Raw report.transactions from server:", report.transactions);
 
     // Initialize form with all transactions for this customer/party
     const { data, setData, put, processing } = useForm({
         report_type: report.report_type,
         transaction_type: transactionType,
-        submission_date: formatDateForInput(report.submission_date),
-        transactions: report.transactions.map((transaction) => ({
-            transaction_id: transaction.id,
-            transaction_reference_no:
-                transaction.transaction_reference_no ?? "",
-            mode_of_transaction_id: transaction.mode_of_transaction_id
-                ? String(transaction.mode_of_transaction_id)
-                : "",
-            transaction_amount: transaction.transaction_amount ?? "",
-            transaction_code_id: transaction.transaction_code_id
-                ? String(transaction.transaction_code_id)
-                : "",
-            transaction_date: formatDateForInput(transaction.transaction_date),
-            account_number: transaction.account_number ?? "",
-        })),
+        submission_date: report.submission_date ?? "",
+        transactions: report.transactions.map((transaction) => {
+            console.log("🔍 Processing transaction:", {
+                id: transaction.id,
+                raw_date: transaction.transaction_date,
+                raw_time: transaction.transaction_time,
+                date_type: typeof transaction.transaction_date,
+                time_type: typeof transaction.transaction_time,
+            });
+
+            return {
+                transaction_id: transaction.id,
+                transaction_reference_no:
+                    transaction.transaction_reference_no ?? "",
+                mode_of_transaction_id: transaction.mode_of_transaction_id
+                    ? String(transaction.mode_of_transaction_id)
+                    : "",
+                transaction_amount: transaction.transaction_amount ?? "",
+                transaction_code_id: transaction.transaction_code_id
+                    ? String(transaction.transaction_code_id)
+                    : "",
+                transaction_date: transaction.transaction_date ?? "",
+                transaction_time: transaction.transaction_time ?? "",
+                account_number: transaction.account_number ?? "",
+            };
+        }),
     });
 
     const updateTransaction = (transactionIndex, field, value) => {
@@ -59,7 +110,11 @@ export default function EditTransaction({
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        console.log("  📤 Submitting transactions:", data.transactions);
+
+        // Put the form with the data directly
         put(`/reports/${report.id}/update-transactions`, {
+            data: data,
             onSuccess: () => {
                 Swal.fire({
                     icon: "success",
@@ -138,11 +193,8 @@ export default function EditTransaction({
                                             ).toLocaleString()}
                                             {" • "}
                                             Date:{" "}
-                                            {transaction.transaction_date
-                                                ? new Date(
-                                                      transaction.transaction_date
-                                                  ).toLocaleDateString()
-                                                : "Not set"}
+                                            {formatDate(transaction.transaction_date)}
+                                            {transaction.transaction_time && ` • Time: ${formatTime(transaction.transaction_time)}`}
                                         </p>
                                     </div>
                                 </div>

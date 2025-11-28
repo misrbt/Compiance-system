@@ -1,10 +1,11 @@
-import { Head, Link, useForm } from "@inertiajs/react";
+﻿import { Head, Link, useForm } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import { ArrowLeft, Save } from "lucide-react";
 import { useEffect } from "react";
 import Swal from "sweetalert2";
 import ParticipatingBanks from "./components/ParticipatingBanks";
 import Parties from "./components/Parties";
+
 
 export default function Edit({
     report,
@@ -14,18 +15,55 @@ export default function Edit({
 }) {
     // Helper function to format date for input[type="date"]
     const formatDateForInput = (date) => {
-        if (!date) return "";
-        // If it's already in YYYY-MM-DD format, return as is
-        if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-            return date;
+        if (!date) {
+            return "";
         }
-        // Otherwise, parse and format
+
+        if (typeof date === "string") {
+            const match = date.match(
+                /^(\d{4})-(\d{2})-(\d{2})(?:[ T]\d{2}:\d{2}(?::\d{2})?)?$/
+            );
+            if (match) {
+                const [, y, m, d] = match;
+                return `${y}-${m}-${d}`;
+            }
+        }
+
         try {
             const d = new Date(date);
+            if (Number.isNaN(d.getTime())) {
+                return "";
+            }
             return d.toISOString().split("T")[0];
         } catch {
             return "";
         }
+    };
+
+    const formatDateTimeForInput = (value) => {
+        if (!value) {
+            return "";
+        }
+
+        if (typeof value === "string") {
+            const withT = value.match(
+                /^(\d{4})-(\d{2})-(\d{2})[T](\d{2}):(\d{2})(?::(\d{2}))?$/
+            );
+            if (withT) {
+                const [, y, m, d, hh, mm, ss = "00"] = withT;
+                return `${y}-${m}-${d}T${hh}:${mm}:${ss}`;
+            }
+
+            const match = value.match(
+                /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/
+            );
+            if (match) {
+                const [, y, m, d, hh = "00", mm = "00", ss = "00"] = match;
+                return `${y}-${m}-${d}T${hh}:${mm}:${ss}`;
+            }
+        }
+
+        return "";
     };
 
     // Debug: Log party data
@@ -45,11 +83,11 @@ export default function Edit({
             mode_of_transaction_id: transaction.mode_of_transaction_id
                 ? String(transaction.mode_of_transaction_id)
                 : "",
-            transaction_amount: transaction.transaction_amount ?? "",
-            transaction_code_id: transaction.transaction_code_id
-                ? String(transaction.transaction_code_id)
-                : "",
-            transaction_date: formatDateForInput(transaction.transaction_date),
+        transaction_amount: transaction.transaction_amount ?? "",
+        transaction_code_id: transaction.transaction_code_id
+            ? String(transaction.transaction_code_id)
+            : "",
+        transaction_date: formatDateTimeForInput(transaction.transaction_date),
             account_number: transaction.account_number ?? "",
             parties: transaction.parties.map((party) => ({
                 party_id: party.id, // Use party_id instead of id to avoid Inertia filtering
@@ -169,6 +207,17 @@ export default function Edit({
         setData("transactions", updatedTransactions);
     };
 
+    const updateTransaction = (field, value) => {
+        const currentTransaction = data.transactions[0];
+        setData("transactions", [
+            {
+                ...currentTransaction,
+                transaction_id: currentTransaction.transaction_id,
+                [field]: value,
+            },
+        ]);
+    };
+
     const removeParty = (index) => {
         if (data.transactions[0].parties.length <= 1) {
             Swal.fire({
@@ -212,8 +261,27 @@ export default function Edit({
         ]);
     };
 
+    const normalizeTransactionDate = (raw) => {
+        if (typeof raw !== "string") {
+            return "";
+        }
+
+        if (raw.includes("T")) {
+            const [datePart, timePart = "00:00:00"] = raw.split("T");
+            const [hh = "00", mm = "00", ss = "00"] = timePart.split(":");
+            return `${datePart} ${hh.padStart(2, "0")}:${mm.padStart(2, "0")}:${ss.padStart(2, "0")}`;
+        }
+
+        return raw;
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        const normalizedTransactions = data.transactions.map((transaction) => ({
+            ...transaction,
+            transaction_date: normalizeTransactionDate(transaction.transaction_date),
+        }));
 
         const parties = data.transactions[0]?.parties || [];
         const seenNames = new Set();
@@ -240,11 +308,12 @@ export default function Edit({
         }
 
         // Debug: Log the data being sent
-        console.log("🚀 Submitting data:", data);
-        console.log("🚀 Transaction ID:", data.transactions[0]?.transaction_id);
-        console.log("🚀 Party ID:", data.transactions[0]?.parties[0]?.party_id);
+        console.log("?? Submitting data:", { ...data, transactions: normalizedTransactions });
+        console.log("?? Transaction ID:", normalizedTransactions[0]?.transaction_id);
+        console.log("?? Party ID:", normalizedTransactions[0]?.parties[0]?.party_id);
 
         put(`/reports/${report.id}`, {
+            data: { ...data, transactions: normalizedTransactions },
             onSuccess: () => {
                 Swal.fire({
                     icon: "success",
@@ -374,6 +443,8 @@ export default function Edit({
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
+
+
                     {shouldShowParticipatingBanks() && (
                         <ParticipatingBanks
                             data={data}
@@ -417,3 +488,6 @@ export default function Edit({
         </AppLayout>
     );
 }
+
+
+

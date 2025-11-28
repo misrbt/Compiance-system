@@ -76,7 +76,7 @@ export const transformReportDataForExcel = (reports) => {
             const txSuffix = hasMultipleTransactions ? ` ${txIndex + 1}` : "";
             const participatingBanks = transaction?.participating_banks || [];
 
-            row[`Date of Transaction${txSuffix}`] = formatTransactionDate(transaction?.transaction_date);
+            row[`Date of Transaction${txSuffix}`] = formatTransactionDate(transaction?.transaction_date, transaction?.transaction_time);
             row[`Transaction Code${txSuffix}`] = toUpperCase(transaction?.transaction_code?.ca_sa);
             row[`Transaction Reference${txSuffix}`] = toUpperCase(transaction?.transaction_reference_no);
             row[`MOT${txSuffix}`] = toUpperCase(transaction?.mode_of_transaction?.mod_code || "N/A");
@@ -260,6 +260,7 @@ export const exportToExcel = (reports, filename, submissionType = "A") => {
 
 /**
  * Export CTR reports to CSV file
+ * Note: CSV format does not support column widths or styling
  */
 export const exportToCSV = (reports, filename, submissionType = "A") => {
     if (!reports || reports.length === 0) {
@@ -267,7 +268,7 @@ export const exportToCSV = (reports, filename, submissionType = "A") => {
     }
 
     const formattedData = transformReportDataForExcel(reports);
-    const ctrHeader = [["H", "1", "004004825000000000", "CTR", "X", submissionType]];
+    const ctrHeader = [["H", "1", "'004004825000000000", "CTR", "X", submissionType]];
     const dataRows = formattedData.map((row) => Object.values(row).map(formatCsvValue));
     const trailer = [["T", formattedData.length.toString(), ""]];
     const sheetData = [...ctrHeader, ...dataRows, ...trailer];
