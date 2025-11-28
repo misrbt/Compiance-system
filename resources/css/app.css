@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@source "../../resources/views/**/*.blade.php";
+@source "../../resources/js/**/*.{js,jsx}";
+
+@theme {
+  --font-sans: 'Geist Sans', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  /* BSP Blue Theme - Primary Colors */
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+
+  /* BSP Dark Blue (Primary) - Based on BSP official blue */
+  --primary: 221 83% 20%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Gold (Secondary) - Based on BSP gold accents */
+  --secondary: 45 93% 47%;
+  --secondary-foreground: 222 47% 11%;
+
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222 47% 11%;
+
+  /* Destructive (Red) */
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+
+  /* Borders and Inputs */
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 221 83% 53%;
+
+  /* Chart Colors - BSP Blue Shades and Gold */
+  --chart-1: 221 83% 53%;
+  --chart-2: 45 93% 47%;
+  --chart-3: 207 90% 54%;
+  --chart-4: 199 89% 48%;
+  --chart-5: 217 91% 60%;
+
+  --radius: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme {
+    /* Dark Mode - BSP Blue Theme */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    /* BSP Blue - Lighter for dark mode */
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+
+    /* Gold - Adjusted for dark mode */
+    --secondary: 45 93% 47%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    /* Destructive (Red) */
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Borders and Inputs */
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
+
+    /* Chart Colors - Adjusted for dark mode */
+    --chart-1: 217 91% 60%;
+    --chart-2: 45 93% 47%;
+    --chart-3: 199 89% 48%;
+    --chart-4: 207 90% 54%;
+    --chart-5: 221 83% 53%;
+  }
+}
