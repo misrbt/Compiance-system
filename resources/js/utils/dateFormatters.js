@@ -25,10 +25,21 @@ export const formatTransactionDate = (dateString, timeString = null) => {
 
     // If timeString is provided, use it; otherwise use time from date object
     if (timeString) {
-        const timeParts = timeString.split(":");
-        hours = String(timeParts[0] || "00").padStart(2, "0");
-        minutes = String(timeParts[1] || "00").padStart(2, "0");
-        seconds = String(timeParts[2] || "00").padStart(2, "0");
+        const trimmedTime = timeString.trim();
+        const padTwo = (value) => String(value ?? "00").padStart(2, "0");
+
+        if (trimmedTime.includes(":")) {
+            const timeParts = trimmedTime.split(":");
+            hours = padTwo(timeParts[0]);
+            minutes = padTwo(timeParts[1]);
+            seconds = padTwo(timeParts[2]);
+        } else {
+            // Handle compact formats like HHMMSS or HHMM
+            const digitsOnly = trimmedTime.replace(/\D/g, "");
+            hours = padTwo(digitsOnly.slice(0, 2));
+            minutes = padTwo(digitsOnly.slice(2, 4));
+            seconds = padTwo(digitsOnly.slice(4, 6));
+        }
     } else {
         hours = String(date.getHours()).padStart(2, "0");
         minutes = String(date.getMinutes()).padStart(2, "0");
