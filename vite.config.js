@@ -20,4 +20,16 @@ export default defineConfig({
       '@': path.resolve(__dirname, './resources/js'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-inertia': ['@inertiajs/react'],
+          'vendor-ui': ['sweetalert2', 'framer-motion', 'lucide-react'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
 });
