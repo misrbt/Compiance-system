@@ -108,7 +108,6 @@ export default function Create({ reportType, transactionType, referenceData }) {
     const { data, setData, post, processing, errors } = useForm({
         report_type: reportType,
         transaction_type: transactionType,
-        submission_date: "",
         transactions: [
             {
                 transaction_reference_no: "",
@@ -170,11 +169,8 @@ export default function Create({ reportType, transactionType, referenceData }) {
     };
 
     const addParty = () => {
-        console.log("🚀 ADD PARTY BUTTON CLICKED!");
         const currentParties = data.transactions[0].parties;
         const newPartyIndex = currentParties.length;
-
-        console.log("➕ Adding party, current count:", currentParties.length);
 
         // For CEDP/CDEPT, set default party flag when adding party 2
         let newParty = {};
@@ -256,45 +252,43 @@ export default function Create({ reportType, transactionType, referenceData }) {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Set submission date before posting
-        const currentDate = new Date().toISOString().split("T")[0];
+        // Set submission_date to current date/time when submitting
+        setData("submission_date", new Date().toISOString().split("T")[0]);
 
-        // Prepare data for submission
-        const submissionData = {
-            ...data,
-            submission_date: currentDate,
-        };
-
-        console.log("  📤 Final submissionData:", submissionData);
-
-        // Post the form directly with the data
-        post("/reports", {
-            data: submissionData,
-            onSuccess: () => {
-                Swal.fire({
-                    icon: "success",
-                    title: "Success",
-                    text: "Report created successfully",
-                });
-            },
-            onError: (errors) => {
-                // Check if there's a duplicate party error
-                if (errors.duplicate_party) {
+        // Use setTimeout to ensure state is updated before posting
+        setTimeout(() => {
+            post("/reports", {
+                onSuccess: () => {
                     Swal.fire({
-                        icon: "error",
-                        title: "Duplicate Party Detected",
-                        text: errors.duplicate_party,
-                        confirmButtonColor: "#d33",
+                        icon: "success",
+                        title: "Success!",
+                        text: "Report created successfully",
+                        confirmButtonColor: "#002868",
+                        timer: 2500,
+                        timerProgressBar: true,
                     });
-                } else {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Error",
-                        text: "Please check all required fields",
-                    });
-                }
-            },
-        });
+                },
+                onError: (errors) => {
+                    // Check if there's a duplicate party error
+                    if (errors.duplicate_party) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Duplicate Party Detected",
+                            text: errors.duplicate_party,
+                            confirmButtonColor: "#d33",
+                        });
+                    } else {
+                        console.error("Validation errors:", errors);
+                        Swal.fire({
+                            icon: "error",
+                            title: "Validation Failed",
+                            text: "Please check all required fields and try again",
+                            confirmButtonColor: "#d33",
+                        });
+                    }
+                },
+            });
+        }, 0);
     };
 
     // Check if participating banks section should be shown based on transaction type and MOT
@@ -506,35 +500,6 @@ export default function Create({ reportType, transactionType, referenceData }) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Display duplicate party error if exists */}
-                    {errors.duplicate_party && (
-                        <div className="p-4 border-l-4 border-red-500 bg-red-50">
-                            <div className="flex">
-                                <div className="flex-shrink-0">
-                                    <svg
-                                        className="w-5 h-5 text-red-400"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <h3 className="text-sm font-medium text-red-800">
-                                        Duplicate Party Detected
-                                    </h3>
-                                    <div className="mt-2 text-sm text-red-700">
-                                        <p>{errors.duplicate_party}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
                     <TransactionDetails
                         data={data}
                         referenceData={referenceData}

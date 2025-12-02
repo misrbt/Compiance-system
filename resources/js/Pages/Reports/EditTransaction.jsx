@@ -118,17 +118,20 @@ export default function EditTransaction({
             onSuccess: () => {
                 Swal.fire({
                     icon: "success",
-                    title: "Success",
-                    text: "Transactions updated successfully",
-                    timer: 2000,
-                    showConfirmButton: false,
+                    title: "Success!",
+                    text: `All ${data.transactions.length} transaction${data.transactions.length !== 1 ? 's' : ''} updated successfully`,
+                    confirmButtonColor: "#002868",
+                    timer: 2500,
+                    timerProgressBar: true,
                 });
             },
-            onError: () => {
+            onError: (errors) => {
+                console.error("Update errors:", errors);
                 Swal.fire({
                     icon: "error",
-                    title: "Error",
-                    text: "Please check all required fields",
+                    title: "Update Failed",
+                    text: "Please check all required fields and try again",
+                    confirmButtonColor: "#d33",
                 });
             },
         });

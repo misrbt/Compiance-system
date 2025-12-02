@@ -1,11 +1,11 @@
-﻿import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import { ArrowLeft, Save } from "lucide-react";
 import { useEffect } from "react";
 import Swal from "sweetalert2";
+import TransactionDetails from "./components/TransactionDetails";
 import ParticipatingBanks from "./components/ParticipatingBanks";
 import Parties from "./components/Parties";
-
 
 export default function Edit({
     report,
@@ -15,61 +15,30 @@ export default function Edit({
 }) {
     // Helper function to format date for input[type="date"]
     const formatDateForInput = (date) => {
-        if (!date) {
-            return "";
+        if (!date) return "";
+        // If it's already in YYYY-MM-DD format, return as is
+        if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return date;
         }
-
-        if (typeof date === "string") {
-            const match = date.match(
-                /^(\d{4})-(\d{2})-(\d{2})(?:[ T]\d{2}:\d{2}(?::\d{2})?)?$/
-            );
-            if (match) {
-                const [, y, m, d] = match;
-                return `${y}-${m}-${d}`;
-            }
-        }
-
+        // Otherwise, parse and format
         try {
             const d = new Date(date);
-            if (Number.isNaN(d.getTime())) {
-                return "";
-            }
             return d.toISOString().split("T")[0];
         } catch {
             return "";
         }
     };
 
-    const formatDateTimeForInput = (value) => {
-        if (!value) {
-            return "";
-        }
-
-        if (typeof value === "string") {
-            const withT = value.match(
-                /^(\d{4})-(\d{2})-(\d{2})[T](\d{2}):(\d{2})(?::(\d{2}))?$/
-            );
-            if (withT) {
-                const [, y, m, d, hh, mm, ss = "00"] = withT;
-                return `${y}-${m}-${d}T${hh}:${mm}:${ss}`;
-            }
-
-            const match = value.match(
-                /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/
-            );
-            if (match) {
-                const [, y, m, d, hh = "00", mm = "00", ss = "00"] = match;
-                return `${y}-${m}-${d}T${hh}:${mm}:${ss}`;
-            }
-        }
-
-        return "";
-    };
-
     // Debug: Log party data
     console.log("🔍 Edit - Full Report:", report);
-    console.log("🔍 Edit - First Party:", report.transactions?.[0]?.parties?.[0]);
-    console.log("🔍 Edit - Account Number:", report.transactions?.[0]?.parties?.[0]?.account_number);
+    console.log(
+        "🔍 Edit - First Party:",
+        report.transactions?.[0]?.parties?.[0]
+    );
+    console.log(
+        "🔍 Edit - Account Number:",
+        report.transactions?.[0]?.parties?.[0]?.account_number
+    );
 
     // Initialize form with existing report data
     const { data, setData, put, processing } = useForm({
@@ -77,20 +46,18 @@ export default function Edit({
         transaction_type: transactionType,
         submission_date: formatDateForInput(report.submission_date),
         transactions: report.transactions.map((transaction) => ({
-            transaction_id: transaction.id, // Use transaction_id instead of id to avoid Inertia filtering
             transaction_reference_no:
                 transaction.transaction_reference_no ?? "",
             mode_of_transaction_id: transaction.mode_of_transaction_id
                 ? String(transaction.mode_of_transaction_id)
                 : "",
-        transaction_amount: transaction.transaction_amount ?? "",
-        transaction_code_id: transaction.transaction_code_id
-            ? String(transaction.transaction_code_id)
-            : "",
-        transaction_date: formatDateTimeForInput(transaction.transaction_date),
+            transaction_amount: transaction.transaction_amount ?? "",
+            transaction_code_id: transaction.transaction_code_id
+                ? String(transaction.transaction_code_id)
+                : "",
+            transaction_date: formatDateForInput(transaction.transaction_date),
             account_number: transaction.account_number ?? "",
             parties: transaction.parties.map((party) => ({
-                party_id: party.id, // Use party_id instead of id to avoid Inertia filtering
                 party_flag_id: party.party_flag_id
                     ? String(party.party_flag_id)
                     : "",
@@ -115,6 +82,7 @@ export default function Edit({
                     ? String(party.source_of_fund_id)
                     : "",
                 contact_no: party.contact_no ?? "",
+                transaction_amount: party.transaction_amount ?? "",
                 customer_reference_no: party.customer_reference_no ?? "",
                 old_acct_no: party.old_acct_no ?? "",
             })),
@@ -131,12 +99,6 @@ export default function Edit({
         })),
     });
 
-    // Debug: Check what got initialized in the form
-    console.log("📋 Form Data After Init:", data);
-    console.log("📋 Form Transaction ID:", data.transactions?.[0]?.transaction_id);
-    console.log("📋 Form Party ID:", data.transactions?.[0]?.parties?.[0]?.party_id);
-    console.log("📋 Form Party Account Number:", data.transactions?.[0]?.parties?.[0]?.account_number);
-
     const getTransactionTypeLabel = (code) => {
         const transactionCode = referenceData.transactionCodes?.find(
             (tc) => tc.ca_sa === code
@@ -144,35 +106,38 @@ export default function Edit({
         return transactionCode ? transactionCode.transaction_title : code;
     };
 
+    const updateTransaction = (field, value) => {
+        setData("transactions", [
+            {
+                ...data.transactions[0],
+                [field]: value,
+            },
+        ]);
+    };
+
     const updateParty = (partyIndex, field, value) => {
-        const currentTransaction = data.transactions[0];
-        const updatedParties = [...currentTransaction.parties];
-        const currentParty = updatedParties[partyIndex];
+        const updatedParties = [...data.transactions[0].parties];
         updatedParties[partyIndex] = {
-            ...currentParty,
-            party_id: currentParty.party_id, // Explicitly preserve party ID
+            ...updatedParties[partyIndex],
             [field]: value,
         };
         setData("transactions", [
             {
-                ...currentTransaction,
-                transaction_id: currentTransaction.transaction_id, // Explicitly preserve transaction ID
+                ...data.transactions[0],
                 parties: updatedParties,
             },
         ]);
     };
 
     const updateParticipatingBank = (bankIndex, field, value) => {
-        const currentTransaction = data.transactions[0];
-        const updatedBanks = [...currentTransaction.participating_banks];
+        const updatedBanks = [...data.transactions[0].participating_banks];
         updatedBanks[bankIndex] = {
             ...updatedBanks[bankIndex],
             [field]: value,
         };
         setData("transactions", [
             {
-                ...currentTransaction,
-                transaction_id: currentTransaction.transaction_id, // Explicitly preserve transaction ID
+                ...data.transactions[0],
                 participating_banks: updatedBanks,
             },
         ]);
@@ -198,22 +163,10 @@ export default function Edit({
             }
         }
 
-        // Add the new party to ALL transactions in the report
-        const updatedTransactions = data.transactions.map((transaction) => ({
-            ...transaction,
-            parties: [newParty, ...transaction.parties],
-        }));
-
-        setData("transactions", updatedTransactions);
-    };
-
-    const updateTransaction = (field, value) => {
-        const currentTransaction = data.transactions[0];
         setData("transactions", [
             {
-                ...currentTransaction,
-                transaction_id: currentTransaction.transaction_id,
-                [field]: value,
+                ...data.transactions[0],
+                parties: [...currentParties, newParty],
             },
         ]);
     };
@@ -227,14 +180,15 @@ export default function Edit({
             });
             return;
         }
-
-        // Remove the party from ALL transactions in the report
-        const updatedTransactions = data.transactions.map((transaction) => ({
-            ...transaction,
-            parties: transaction.parties.filter((_, i) => i !== index),
-        }));
-
-        setData("transactions", updatedTransactions);
+        const updatedParties = data.transactions[0].parties.filter(
+            (_, i) => i !== index
+        );
+        setData("transactions", [
+            {
+                ...data.transactions[0],
+                parties: updatedParties,
+            },
+        ]);
     };
 
     const addParticipatingBank = () => {
@@ -261,73 +215,27 @@ export default function Edit({
         ]);
     };
 
-    const normalizeTransactionDate = (raw) => {
-        if (typeof raw !== "string") {
-            return "";
-        }
-
-        if (raw.includes("T")) {
-            const [datePart, timePart = "00:00:00"] = raw.split("T");
-            const [hh = "00", mm = "00", ss = "00"] = timePart.split(":");
-            return `${datePart} ${hh.padStart(2, "0")}:${mm.padStart(2, "0")}:${ss.padStart(2, "0")}`;
-        }
-
-        return raw;
-    };
-
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        const normalizedTransactions = data.transactions.map((transaction) => ({
-            ...transaction,
-            transaction_date: normalizeTransactionDate(transaction.transaction_date),
-        }));
-
-        const parties = data.transactions[0]?.parties || [];
-        const seenNames = new Set();
-
-        for (const party of parties) {
-            const firstName = (party.first_name || "").trim().toLowerCase();
-            const lastName = (party.last_name || "").trim().toLowerCase();
-
-            if (!firstName || !lastName) {
-                continue;
-            }
-
-            const key = `${firstName}|${lastName}`;
-            if (seenNames.has(key)) {
-                Swal.fire({
-                    icon: "error",
-                    title: "Duplicate Party",
-                    text: "A party with the same first and last name already exists. Please review the party list.",
-                });
-                return;
-            }
-
-            seenNames.add(key);
-        }
-
-        // Debug: Log the data being sent
-        console.log("?? Submitting data:", { ...data, transactions: normalizedTransactions });
-        console.log("?? Transaction ID:", normalizedTransactions[0]?.transaction_id);
-        console.log("?? Party ID:", normalizedTransactions[0]?.parties[0]?.party_id);
-
         put(`/reports/${report.id}`, {
-            data: { ...data, transactions: normalizedTransactions },
             onSuccess: () => {
                 Swal.fire({
                     icon: "success",
-                    title: "Success",
+                    title: "Success!",
                     text: "Report updated successfully",
-                    timer: 2000,
-                    showConfirmButton: false,
+                    confirmButtonColor: "#002868",
+                    timer: 2500,
+                    timerProgressBar: true,
                 });
             },
-            onError: () => {
+            onError: (errors) => {
+                console.error("Update errors:", errors);
                 Swal.fire({
                     icon: "error",
-                    title: "Error",
-                    text: "Please check all required fields",
+                    title: "Update Failed",
+                    text: "Please check all required fields and try again",
+                    confirmButtonColor: "#d33",
                 });
             },
         });
@@ -438,12 +346,17 @@ export default function Edit({
                         Edit {getTransactionTypeLabel(transactionType)}
                     </h1>
                     <p className="mt-1 text-gray-600">
-                        Update the party and participating banks details below
+                        Update the transaction details below
                     </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-
+                    <TransactionDetails
+                        data={data}
+                        referenceData={referenceData}
+                        updateTransaction={updateTransaction}
+                        transactionType={transactionType}
+                    />
 
                     {shouldShowParticipatingBanks() && (
                         <ParticipatingBanks
@@ -488,6 +401,3 @@ export default function Edit({
         </AppLayout>
     );
 }
-
-
-

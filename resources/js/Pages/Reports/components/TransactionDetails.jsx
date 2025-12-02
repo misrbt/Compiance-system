@@ -102,7 +102,8 @@ export default function TransactionDetails({
 
                 <div>
                     <label className="block mb-1 text-sm font-medium text-gray-700">
-                        Transaction Date
+                        Transaction Date{" "}
+                        <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="date"
@@ -114,12 +115,14 @@ export default function TransactionDetails({
                             )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#002868]"
+                        required
                     />
                 </div>
 
                 <div>
                     <label className="block mb-1 text-sm font-medium text-gray-700">
-                        Transaction Time
+                        Transaction Time{" "}
+                        <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="time"
@@ -132,6 +135,7 @@ export default function TransactionDetails({
                             )
                         }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#002868]"
+                        required
                     />
                 </div>
             </div>
