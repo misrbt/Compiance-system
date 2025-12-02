@@ -90,13 +90,16 @@ export default function TransactionDetails({
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#002868]"
                         required
                     >
-                        {referenceData.transactionCodes
-                            ?.filter((tc) => tc.ca_sa === transactionType)
-                            .map((code) => (
-                                <option key={code.id} value={code.id}>
-                                    {code.ca_sa} - {code.transaction_title}
-                                </option>
-                            ))}
+                        <option value="">Select transaction code</option>
+                        {referenceData.transactionCodes?.map((code) => (
+                            <option
+                                key={code.id}
+                                value={code.id}
+                                className={code.ca_sa === transactionType ? "font-bold bg-blue-50" : ""}
+                            >
+                                {code.ca_sa} - {code.transaction_title}
+                            </option>
+                        ))}
                     </select>
                 </div>
 
