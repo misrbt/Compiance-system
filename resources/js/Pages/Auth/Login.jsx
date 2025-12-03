@@ -199,19 +199,6 @@ export default function Login({ status }) {
                             </Button>
                         </motion.form>
 
-                        {/* Register Link */}
-                        <div className="text-center">
-                            <p className="text-gray-600">
-                                Don't have an account?{" "}
-                                <Link
-                                    href="/register"
-                                    className="font-bold text-[#002868] hover:text-[#D4AF37] transition-colors"
-                                >
-                                    Create Account
-                                </Link>
-                            </p>
-                        </div>
-
                         {/* Footer */}
                         <motion.div
                             initial={{ opacity: 0 }}
