@@ -10,7 +10,6 @@ import {
     ChevronDown,
     UserCircle,
     Database,
-    AlertTriangle,
     Menu,
     X,
     Grid3x3,
@@ -34,11 +33,6 @@ export default function AppLayout({ children, title }) {
     const navigation = [
         { name: "Dashboard", href: "/dashboard", icon: Home },
         { name: "CTR Reports", href: "/reports/browse-ctr", icon: FileText },
-        {
-            name: "STR Reports",
-            href: "/reports/browse-str",
-            icon: AlertTriangle,
-        },
         {
             name: "Data Configuration",
             href: "/data-configuration",

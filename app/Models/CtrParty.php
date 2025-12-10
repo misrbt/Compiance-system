@@ -12,6 +12,7 @@ class CtrParty extends Model
 
     protected $fillable = [
         'party_flag_id',
+        'account_type',
         'name_flag_id',
         'first_name',
         'last_name',

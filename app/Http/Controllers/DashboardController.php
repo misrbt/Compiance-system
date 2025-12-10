@@ -11,19 +11,10 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $userId = auth()->id();
+        // Get statistics for all reports (not filtered by user)
+        $ctrCount = CtrReport::where('report_type', 'CTR')->count();
 
-        // Get statistics
-        $ctrCount = CtrReport::where('user_id', $userId)
-            ->where('report_type', 'CTR')
-            ->count();
-
-        $strCount = CtrReport::where('user_id', $userId)
-            ->where('report_type', 'STR')
-            ->count();
-
-        $totalReports = $ctrCount + $strCount;
-
+        $totalReports = $ctrCount;
 
         // Get monthly data for the last 6 months
         $monthlyData = [];
@@ -31,14 +22,7 @@ class DashboardController extends Controller
             $month = Carbon::now()->subMonths($i);
             $monthName = $month->format('M');
 
-            $ctrMonthCount = CtrReport::where('user_id', $userId)
-                ->where('report_type', 'CTR')
-                ->whereYear('created_at', $month->year)
-                ->whereMonth('created_at', $month->month)
-                ->count();
-
-            $strMonthCount = CtrReport::where('user_id', $userId)
-                ->where('report_type', 'STR')
+            $ctrMonthCount = CtrReport::where('report_type', 'CTR')
                 ->whereYear('created_at', $month->year)
                 ->whereMonth('created_at', $month->month)
                 ->count();
@@ -46,14 +30,13 @@ class DashboardController extends Controller
             $monthlyData[] = [
                 'month' => $monthName,
                 'ctr' => $ctrMonthCount,
-                'str' => $strMonthCount,
             ];
         }
 
         return Inertia::render('Dashboard', [
             'stats' => [
                 'ctr' => $ctrCount,
-                'str' => $strCount,
+                'str' => 0,
                 'total' => $totalReports,
             ],
             'monthlyData' => $monthlyData,

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Trash2, User } from "lucide-react";
+import { ChevronDown, Plus, Trash2, User } from "lucide-react";
 
 export default function Parties({
     data,
@@ -10,6 +10,8 @@ export default function Parties({
     addParty,
     removeParty,
     transactionType,
+    accountType,
+    updateTransaction,
 }) {
     const formatContactForInput = (value) => {
         if (!value) {
@@ -52,16 +54,76 @@ export default function Parties({
                 <h2 className="text-xl font-semibold text-[#002868] flex items-center">
                     <User className="w-5 h-5 mr-2" />
                     Parties Information
+                    {accountType === "Individual" || accountType === "Corporate" ? (
+                        <span className="ml-3 text-xs font-normal text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                            (1 party only)
+                        </span>
+                    ) : accountType === "Joint" ? (
+                        <span className="ml-3 text-xs font-normal text-gray-600 bg-blue-100 px-2 py-1 rounded">
+                            (Joint Account)
+                        </span>
+                    ) : null}
                 </h2>
-                <button
-                    type="button"
-                    onClick={addParty}
-                    className="inline-flex items-center px-3 py-1.5 bg-[#002868] hover:bg-[#001a4d] text-white text-sm rounded-md transition-colors"
-                >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Party
-                </button>
+                {/* Only show Add Party button for Joint accounts */}
+                {accountType === "Joint" && (
+                    <button
+                        type="button"
+                        onClick={addParty}
+                        className="inline-flex items-center px-3 py-1.5 bg-[#002868] hover:bg-[#001a4d] text-white text-sm rounded-md transition-colors"
+                    >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add Party
+                    </button>
+                )}
             </div>
+
+            {/* Account Type Selection */}
+            <div className="mb-6">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                    Account Type <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                    <select
+                        value={accountType || ""}
+                        onChange={(e) =>
+                            updateTransaction("account_type", e.target.value)
+                        }
+                        className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-[#002868]"
+                        required
+                    >
+                        <option value="">Select account type</option>
+                        <option value="Individual">Individual Account</option>
+                        <option value="Corporate">Corporate Account</option>
+                        <option value="Joint">Joint Account</option>
+                    </select>
+                    <ChevronDown className="absolute w-4 h-4 text-gray-500 pointer-events-none right-3 top-1/2 -translate-y-1/2" />
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                    {!accountType && "Select an account type to configure parties"}
+                    {accountType === "Individual" && "Individual accounts can only have 1 party"}
+                    {accountType === "Corporate" && "Corporate accounts can only have 1 party"}
+                    {accountType === "Joint" && "Joint accounts require at least 2 parties"}
+                </p>
+            </div>
+
+            {/* Warning for Joint accounts with less than 2 parties */}
+            {accountType === "Joint" && data.transactions[0].parties.length < 2 && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <div className="flex items-start">
+                        <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        <div>
+                            <p className="text-sm font-semibold text-yellow-800">
+                                Joint Account Requires 2 or More Parties
+                            </p>
+                            <p className="text-xs text-yellow-700 mt-1">
+                                Please add at least one more party before submitting the report.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <AnimatePresence>
                 {data.transactions[0].parties.map((party, partyIndex) => (

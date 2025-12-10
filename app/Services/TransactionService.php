@@ -14,6 +14,8 @@ class TransactionService
     public function createTransaction(int $reportId, array $transactionData): CtrTransaction
     {
         // Create transaction first
+        $accountType = $transactionData['account_type'] ?? null;
+
         $transaction = CtrTransaction::create([
             'ctr_report_id' => $reportId,
             'transaction_reference_no' => $transactionData['transaction_reference_no'] ?? null,
@@ -27,7 +29,10 @@ class TransactionService
         // Create and attach all parties to this transaction
         $partyIds = [];
         foreach ($transactionData['parties'] as $partyData) {
-            $party = CtrParty::create($partyData);
+            $party = CtrParty::create([
+                ...$partyData,
+                'account_type' => $partyData['account_type'] ?? $accountType,
+            ]);
             $partyIds[] = $party->id;
         }
 
@@ -106,10 +111,15 @@ class TransactionService
         $transaction->parties()->detach();
 
         // Process all parties from request
+        $accountType = $transactionData['account_type'] ?? null;
         $partyIds = [];
         foreach ($transactionData['parties'] as $partyData) {
             $partyIdFromRequest = $partyData['party_id'] ?? null;
             $partyDataForSave = collect($partyData)->except(['party_id'])->toArray();
+
+            if ($accountType && empty($partyDataForSave['account_type'])) {
+                $partyDataForSave['account_type'] = $accountType;
+            }
 
             if ($partyIdFromRequest) {
                 // Update existing party

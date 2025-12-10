@@ -1,4 +1,4 @@
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, usePage } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import {
     FileText,
@@ -21,11 +21,13 @@ import {
     Search,
     Download,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 import ReportsTable from "@/components/ReportsTable";
 import ExportFormatDialog from "./components/ExportFormatDialog";
 
 export default function BrowseCtr({ reports, filters }) {
+    const { flash } = usePage().props;
     // Simple client-side filtering state
     const [dateFrom, setDateFrom] = useState("");
     const [dateTo, setDateTo] = useState("");
@@ -33,6 +35,28 @@ export default function BrowseCtr({ reports, filters }) {
     const [transactionCode, setTransactionCode] = useState("");
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [showGenerateDialog, setShowGenerateDialog] = useState(false);
+
+    useEffect(() => {
+        if (flash?.success) {
+            Swal.fire({
+                icon: "success",
+                title: "Success!",
+                text: flash.success,
+                timer: 2000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                confirmButtonColor: "#002868",
+            });
+        }
+        if (flash?.error) {
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: flash.error,
+                confirmButtonColor: "#d33",
+            });
+        }
+    }, [flash]);
 
     // Client-side live filtering - backend already sends deduplicated data
     const filteredReports = reports.filter((report) => {

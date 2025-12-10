@@ -1,9 +1,8 @@
-import { Head, Link, useForm } from "@inertiajs/react";
+﻿import { Head, Link, useForm } from "@inertiajs/react";
 import AppLayout from "@/Layouts/AppLayout";
 import { ArrowLeft, Save } from "lucide-react";
 import { useEffect } from "react";
 import Swal from "sweetalert2";
-import TransactionDetails from "./components/TransactionDetails";
 import ParticipatingBanks from "./components/ParticipatingBanks";
 import Parties from "./components/Parties";
 
@@ -29,23 +28,14 @@ export default function Edit({
         }
     };
 
-    // Debug: Log party data
-    console.log("🔍 Edit - Full Report:", report);
-    console.log(
-        "🔍 Edit - First Party:",
-        report.transactions?.[0]?.parties?.[0]
-    );
-    console.log(
-        "🔍 Edit - Account Number:",
-        report.transactions?.[0]?.parties?.[0]?.account_number
-    );
-
     // Initialize form with existing report data
     const { data, setData, put, processing } = useForm({
         report_type: report.report_type,
         transaction_type: transactionType,
         submission_date: formatDateForInput(report.submission_date),
         transactions: report.transactions.map((transaction) => ({
+            transaction_id: transaction.id,
+            account_type: transaction.parties?.[0]?.account_type ?? "",
             transaction_reference_no:
                 transaction.transaction_reference_no ?? "",
             mode_of_transaction_id: transaction.mode_of_transaction_id
@@ -58,9 +48,11 @@ export default function Edit({
             transaction_date: formatDateForInput(transaction.transaction_date),
             account_number: transaction.account_number ?? "",
             parties: transaction.parties.map((party) => ({
+                party_id: party.id ?? party.party_id ?? null,
                 party_flag_id: party.party_flag_id
                     ? String(party.party_flag_id)
                     : "",
+                account_type: party.account_type ?? "",
                 name_flag_id: party.name_flag_id
                     ? String(party.name_flag_id)
                     : "",
@@ -99,20 +91,21 @@ export default function Edit({
         })),
     });
 
-    const getTransactionTypeLabel = (code) => {
-        const transactionCode = referenceData.transactionCodes?.find(
-            (tc) => tc.ca_sa === code
-        );
-        return transactionCode ? transactionCode.transaction_title : code;
-    };
-
     const updateTransaction = (field, value) => {
-        setData("transactions", [
-            {
-                ...data.transactions[0],
-                [field]: value,
-            },
-        ]);
+        const updatedTransaction = {
+            ...data.transactions[0],
+            [field]: value,
+        };
+
+        // If updating account_type, also update all parties' account_type
+        if (field === "account_type") {
+            updatedTransaction.parties = updatedTransaction.parties.map(party => ({
+                ...party,
+                account_type: value
+            }));
+        }
+
+        setData("transactions", [updatedTransaction]);
     };
 
     const updateParty = (partyIndex, field, value) => {
@@ -172,7 +165,10 @@ export default function Edit({
     };
 
     const removeParty = (index) => {
-        if (data.transactions[0].parties.length <= 1) {
+        const accountType = data.transactions[0].account_type;
+        const currentParties = data.transactions[0].parties;
+
+        if (currentParties.length <= 1) {
             Swal.fire({
                 icon: "error",
                 title: "Cannot Remove",
@@ -180,9 +176,17 @@ export default function Edit({
             });
             return;
         }
-        const updatedParties = data.transactions[0].parties.filter(
-            (_, i) => i !== index
-        );
+
+        if (accountType === "Joint" && currentParties.length <= 2) {
+            Swal.fire({
+                icon: "error",
+                title: "Cannot Remove",
+                text: "Joint Account must have at least 2 parties",
+            });
+            return;
+        }
+
+        const updatedParties = currentParties.filter((_, i) => i !== index);
         setData("transactions", [
             {
                 ...data.transactions[0],
@@ -218,15 +222,44 @@ export default function Edit({
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        put(`/reports/${report.id}`, {
+        const accountType = data.transactions[0].account_type;
+        const partyCount = data.transactions[0].parties.length;
+
+        if (accountType === "Joint" && partyCount < 2) {
+            Swal.fire({
+                icon: "error",
+                title: "Validation Error",
+                text: "Joint Account must have at least 2 parties",
+                confirmButtonColor: "#d33",
+            });
+            return;
+        }
+
+        const updatedTransactions = data.transactions.map((transaction) => ({
+            ...transaction,
+            parties: transaction.parties.map((party) => ({
+                ...party,
+                account_type: transaction.account_type,
+            })),
+        }));
+
+        const submitData = {
+            ...data,
+            transactions: updatedTransactions,
+        };
+
+        put(`/reports/${report.id}`, submitData, {
             onSuccess: () => {
                 Swal.fire({
                     icon: "success",
                     title: "Success!",
                     text: "Report updated successfully",
                     confirmButtonColor: "#002868",
-                    timer: 2500,
+                    timer: 2000,
                     timerProgressBar: true,
+                    showConfirmButton: false,
+                }).then(() => {
+                    window.location.href = "/reports/browse-ctr";
                 });
             },
             onError: (errors) => {
@@ -320,6 +353,35 @@ export default function Edit({
         }
     }, [data.transactions[0].mode_of_transaction_id]);
 
+    useEffect(() => {
+        const accountType = data.transactions[0].account_type;
+        const currentParties = data.transactions[0].parties;
+
+        if (accountType === "Individual" || accountType === "Corporate") {
+            if (currentParties.length > 1) {
+                setData("transactions", [
+                    {
+                        ...data.transactions[0],
+                        parties: [currentParties[0]],
+                    },
+                ]);
+            }
+        } else if (accountType === "Joint") {
+            if (currentParties.length < 2) {
+                const newParties = [...currentParties];
+                while (newParties.length < 2) {
+                    newParties.push({});
+                }
+                setData("transactions", [
+                    {
+                        ...data.transactions[0],
+                        parties: newParties,
+                    },
+                ]);
+            }
+        }
+    }, [data.transactions[0].account_type]);
+
     return (
         <AppLayout>
             <Head title={`Edit ${reportType} Report`} />
@@ -334,30 +396,15 @@ export default function Edit({
                 </Link>
 
                 <div className="mb-6">
-                    <div className="flex items-center mb-2 space-x-3">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#002868] text-white text-sm font-medium">
-                            {reportType}
-                        </span>
-                        <span className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-800 bg-gray-100 rounded-full">
-                            {transactionType}
-                        </span>
-                    </div>
                     <h1 className="text-3xl font-bold text-[#002868]">
-                        Edit {getTransactionTypeLabel(transactionType)}
+                        Edit CTR Party
                     </h1>
                     <p className="mt-1 text-gray-600">
-                        Update the transaction details below
+                        Update party information and account type
                     </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <TransactionDetails
-                        data={data}
-                        referenceData={referenceData}
-                        updateTransaction={updateTransaction}
-                        transactionType={transactionType}
-                    />
-
                     {shouldShowParticipatingBanks() && (
                         <ParticipatingBanks
                             data={data}
@@ -378,6 +425,8 @@ export default function Edit({
                         addParty={addParty}
                         removeParty={removeParty}
                         transactionType={transactionType}
+                        accountType={data.transactions[0].account_type}
+                        updateTransaction={updateTransaction}
                     />
 
                     <div className="flex justify-end space-x-4">
@@ -401,3 +450,4 @@ export default function Edit({
         </AppLayout>
     );
 }
+

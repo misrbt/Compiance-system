@@ -28,10 +28,10 @@ Route::middleware(['auth', 'prevent.back'])->group(function () {
     Route::middleware(['portal:amla'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // CTR/STR Reports
+    // CTR Reports
     Route::get('/reports', [CtrReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/browse-ctr', [CtrReportController::class, 'browseCtr'])->name('reports.browse-ctr');
-    Route::get('/reports/browse-str', [CtrReportController::class, 'browseStr'])->name('reports.browse-str');
+    // Route::get('/reports/browse-str', [CtrReportController::class, 'browseStr'])->name('reports.browse-str'); // Disabled - STR feature not in use
     Route::get('/reports/generate-ctr', [CtrReportController::class, 'generateCtr'])->name('reports.generate-ctr');
     Route::get('/reports/export-ctr', [CtrReportController::class, 'exportCtr'])->name('reports.export-ctr');
     Route::get('/reports/select-type', [CtrReportController::class, 'selectType'])->name('reports.select-type');

@@ -28,19 +28,6 @@ export default function Dashboard({ auth, stats: statsData, monthlyData }) {
             iconBg: 'bg-gradient-to-br from-blue-500 to-blue-600'
         },
         {
-            title: 'STR Reports',
-            value: statsData.str,
-            icon: AlertTriangle,
-            description: 'Suspicious Transaction Reports',
-            color: 'text-red-600',
-            bgColor: 'bg-red-50',
-            borderColor: 'border-red-200',
-            gradient: 'from-[#991B1B] via-[#B91C1C] to-[#DC2626]',
-            accentGradient: 'from-red-400 to-red-600',
-            link: '/reports/browse-str',
-            iconBg: 'bg-gradient-to-br from-red-500 to-red-600'
-        },
-        {
             title: 'Total Reports',
             value: statsData.total,
             icon: Database,
@@ -163,7 +150,7 @@ export default function Dashboard({ auth, stats: statsData, monthlyData }) {
                 </motion.div>
 
                 {/* Enhanced Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {stats.map((stat, index) => {
                         const Icon = stat.icon;
                         return (
@@ -244,7 +231,7 @@ export default function Dashboard({ auth, stats: statsData, monthlyData }) {
                                             </CardTitle>
                                         </div>
                                         <CardDescription className="text-gray-600 ml-1">
-                                            Monthly breakdown of CTR and STR submissions
+                                            Monthly breakdown of CTR submissions
                                         </CardDescription>
                                     </div>
                                     <div className="hidden md:block p-3 bg-blue-50 rounded-xl border border-blue-100 shadow-sm">
@@ -261,10 +248,6 @@ export default function Dashboard({ auth, stats: statsData, monthlyData }) {
                                                     label: "CTR Reports",
                                                     color: "#002868",
                                                 },
-                                                str: {
-                                                    label: "STR Reports",
-                                                    color: "#D4AF37",
-                                                },
                                             }}
                                             className="h-full w-full"
                                         >
@@ -274,10 +257,6 @@ export default function Dashboard({ auth, stats: statsData, monthlyData }) {
                                                         <linearGradient id="colorCtr" x1="0" y1="0" x2="0" y2="1">
                                                             <stop offset="0%" stopColor="#002868" stopOpacity={1}/>
                                                             <stop offset="100%" stopColor="#004080" stopOpacity={0.8}/>
-                                                        </linearGradient>
-                                                        <linearGradient id="colorStr" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="0%" stopColor="#D4AF37" stopOpacity={1}/>
-                                                            <stop offset="100%" stopColor="#F59E0B" stopOpacity={0.8}/>
                                                         </linearGradient>
                                                     </defs>
                                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" opacity={0.6} />
@@ -304,14 +283,7 @@ export default function Dashboard({ auth, stats: statsData, monthlyData }) {
                                                         name="CTR Reports"
                                                         fill="url(#colorCtr)"
                                                         radius={[8, 8, 0, 0]}
-                                                        barSize={35}
-                                                    />
-                                                    <Bar
-                                                        dataKey="str"
-                                                        name="STR Reports"
-                                                        fill="url(#colorStr)"
-                                                        radius={[8, 8, 0, 0]}
-                                                        barSize={35}
+                                                        barSize={50}
                                                     />
                                                 </BarChart>
                                             </ResponsiveContainer>
@@ -350,7 +322,7 @@ export default function Dashboard({ auth, stats: statsData, monthlyData }) {
                             </CardHeader>
                             <CardContent className="pt-6 pb-4 space-y-3">
                                 {[
-                                    { title: 'Submit New Report', desc: 'Create CTR or STR', icon: FileText, href: '/reports/select-type', color: 'text-blue-600', bg: 'bg-blue-50', iconBg: 'from-blue-500 to-blue-600', borderColor: 'border-blue-200' },
+                                    { title: 'Submit New Report', desc: 'Create CTR', icon: FileText, href: '/reports/submit-options', color: 'text-blue-600', bg: 'bg-blue-50', iconBg: 'from-blue-500 to-blue-600', borderColor: 'border-blue-200' },
                                     { title: 'View All Reports', desc: 'Access full history', icon: FolderOpen, href: '/reports', color: 'text-amber-600', bg: 'bg-amber-50', iconBg: 'from-amber-500 to-amber-600', borderColor: 'border-amber-200' },
                                     { title: 'Browse CTR', desc: 'Filter submissions', icon: CheckCircle2, href: '/reports/browse-ctr', color: 'text-emerald-600', bg: 'bg-emerald-50', iconBg: 'from-emerald-500 to-emerald-600', borderColor: 'border-emerald-200' },
                                     { title: 'Reference Data', desc: 'Manage system codes', icon: Database, href: '/data-configuration', color: 'text-purple-600', bg: 'bg-purple-50', iconBg: 'from-purple-500 to-purple-600', borderColor: 'border-purple-200' },

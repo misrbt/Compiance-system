@@ -65,7 +65,7 @@ export default function Index({ reports, filters }) {
                             Reports
                         </h1>
                         <p className="mt-1 text-sm text-gray-600">
-                            Manage your CTR and STR submissions
+                            Manage your CTR submissions
                         </p>
                     </div>
                     <Link

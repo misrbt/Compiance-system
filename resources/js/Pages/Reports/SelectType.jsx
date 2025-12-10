@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
-import { FileText, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { FileText, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function SelectType() {
@@ -12,14 +12,6 @@ export default function SelectType() {
             icon: FileText,
             color: 'bg-[#002868]',
             hoverColor: 'hover:bg-[#001a4d]',
-        },
-        {
-            type: 'STR',
-            title: 'Suspicious Transaction Report',
-            description: 'Report for suspicious transactions that may indicate money laundering',
-            icon: AlertTriangle,
-            color: 'bg-red-600',
-            hoverColor: 'hover:bg-red-700',
         },
     ];
 
@@ -41,7 +33,7 @@ export default function SelectType() {
                     <p className="text-gray-600">Select the type of report you want to submit</p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-1 gap-6 max-w-xl mx-auto">
                     {reportTypes.map((reportType, index) => {
                         const Icon = reportType.icon;
                         return (

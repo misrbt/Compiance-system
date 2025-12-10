@@ -33,7 +33,7 @@ export default function View({ report, filterPartyId, partyTransactions = [] }) 
         if (filterPartyId && partyTransactions && partyTransactions.length > 0) {
             return partyTransactions;
         }
-        
+
         let transactions = report.transactions || [];
         if (filterPartyId) {
             // Fallback if partyTransactions wasn't passed for some reason
@@ -589,6 +589,25 @@ export default function View({ report, filterPartyId, partyTransactions = [] }) 
 
                         return code || name || "";
                     };
+                    const resolvePartyAccountType = (party) => {
+                        if (party?.account_type) {
+                            return party.account_type;
+                        }
+
+                        if (party?.accountType) {
+                            return party.accountType;
+                        }
+
+                        const transactionForParty = displayedTransactions.find(
+                            (transaction) =>
+                                (transaction.parties || []).some(
+                                    (transactionParty) =>
+                                        transactionParty.id === party.id
+                                )
+                        );
+
+                        return transactionForParty?.account_type || "";
+                    };
 
                     // Get all parties from all displayed transactions
                     const allParties = displayedTransactions.flatMap(t => t.parties || []) || [];
@@ -637,6 +656,9 @@ export default function View({ report, filterPartyId, partyTransactions = [] }) 
                                                 party.party_flag;
                                             const idType =
                                                 party.idType || party.id_type;
+                                            const accountType =
+                                                resolvePartyAccountType(party) ||
+                                                "N/A";
 
                                             return (
                                                 <div
@@ -817,6 +839,12 @@ export default function View({ report, filterPartyId, partyTransactions = [] }) 
                                                                 label="Customer Ref No"
                                                                 value={
                                                                     party.customer_reference_no
+                                                                }
+                                                            />
+                                                            <InfoItem
+                                                                label="Account Type"
+                                                                value={
+                                                                    accountType
                                                                 }
                                                             />
                                                         </div>

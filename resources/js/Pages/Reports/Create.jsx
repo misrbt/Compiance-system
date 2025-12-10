@@ -43,7 +43,6 @@ export default function Create({ reportType, transactionType, referenceData }) {
             );
             if (defaultFlag) {
                 party1.party_flag_id = String(defaultFlag.id);
-                console.log("🎯 Setting Party 1 default flag to A for CEDP");
             }
         } else if (transactionType === "CDEPT") {
             const defaultFlag = referenceData.partyFlags?.find(
@@ -51,7 +50,6 @@ export default function Create({ reportType, transactionType, referenceData }) {
             );
             if (defaultFlag) {
                 party1.party_flag_id = String(defaultFlag.id);
-                console.log("🎯 Setting Party 1 default flag to T for CDEPT");
             }
         } else if (transactionType === "CENC" || transactionType === "CENCMS") {
             // For CENC and CENCMS, default to "A" (user can change to "B")
@@ -60,9 +58,7 @@ export default function Create({ reportType, transactionType, referenceData }) {
             );
             if (defaultFlag) {
                 party1.party_flag_id = String(defaultFlag.id);
-                console.log(
-                    `🎯 Setting Party 1 default flag to A for ${transactionType} (can change to B)`
-                );
+
             }
         } else if (transactionType === "CRETU") {
             // For CRETU (Returned Check), default to "A" (user can change to "B")
@@ -105,11 +101,12 @@ export default function Create({ reportType, transactionType, referenceData }) {
         return transactionCode ? String(transactionCode.id) : "";
     };
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, transform } = useForm({
         report_type: reportType,
         transaction_type: transactionType,
         transactions: [
             {
+                account_type: "",
                 transaction_reference_no: "",
                 mode_of_transaction_id: getDefaultMOT(),
                 transaction_amount: "",
@@ -206,7 +203,31 @@ export default function Create({ reportType, transactionType, referenceData }) {
     };
 
     const removeParty = (index) => {
-        if (data.transactions[0].parties.length <= 1) {
+        const accountType = data.transactions[0].account_type;
+        const currentPartiesCount = data.transactions[0].parties.length;
+
+        // For Individual/Corporate, cannot remove the only party
+        if ((accountType === "Individual" || accountType === "Corporate") && currentPartiesCount <= 1) {
+            Swal.fire({
+                icon: "error",
+                title: "Cannot Remove",
+                text: "At least one party is required for Individual/Corporate accounts",
+            });
+            return;
+        }
+
+        // For Joint accounts, must have at least 2 parties
+        if (accountType === "Joint" && currentPartiesCount <= 2) {
+            Swal.fire({
+                icon: "error",
+                title: "Cannot Remove",
+                text: "Joint accounts must have at least 2 parties",
+            });
+            return;
+        }
+
+        // General fallback - at least 1 party required
+        if (currentPartiesCount <= 1) {
             Swal.fire({
                 icon: "error",
                 title: "Cannot Remove",
@@ -214,6 +235,7 @@ export default function Create({ reportType, transactionType, referenceData }) {
             });
             return;
         }
+
         const updatedParties = data.transactions[0].parties.filter(
             (_, i) => i !== index
         );
@@ -252,43 +274,79 @@ export default function Create({ reportType, transactionType, referenceData }) {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Set submission_date to current date/time when submitting
-        setData("submission_date", new Date().toISOString().split("T")[0]);
+        // Validate Joint account has at least 2 parties
+        const accountType = data.transactions[0].account_type;
+        const partiesCount = data.transactions[0].parties.length;
 
-        // Use setTimeout to ensure state is updated before posting
-        setTimeout(() => {
-            post("/reports", {
-                onSuccess: () => {
-                    Swal.fire({
-                        icon: "success",
-                        title: "Success!",
-                        text: "Report created successfully",
-                        confirmButtonColor: "#002868",
-                        timer: 2500,
-                        timerProgressBar: true,
-                    });
-                },
-                onError: (errors) => {
-                    // Check if there's a duplicate party error
-                    if (errors.duplicate_party) {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Duplicate Party Detected",
-                            text: errors.duplicate_party,
-                            confirmButtonColor: "#d33",
-                        });
-                    } else {
-                        console.error("Validation errors:", errors);
-                        Swal.fire({
-                            icon: "error",
-                            title: "Validation Failed",
-                            text: "Please check all required fields and try again",
-                            confirmButtonColor: "#d33",
-                        });
-                    }
-                },
+        if (accountType === "Joint" && partiesCount < 2) {
+            Swal.fire({
+                icon: "error",
+                title: "Validation Error",
+                text: "Joint accounts must have at least 2 parties. Please add another party before submitting.",
+                confirmButtonColor: "#d33",
             });
-        }, 0);
+            return;
+        }
+
+        // Validate Individual/Corporate account has exactly 1 party
+        if ((accountType === "Individual" || accountType === "Corporate") && partiesCount !== 1) {
+            Swal.fire({
+                icon: "error",
+                title: "Validation Error",
+                text: `${accountType} accounts must have exactly 1 party.`,
+                confirmButtonColor: "#d33",
+            });
+            return;
+        }
+
+        const submissionDate = new Date().toISOString().split("T")[0];
+
+        const updatedTransactions = data.transactions.map((transaction) => ({
+            ...transaction,
+            parties: transaction.parties.map((party) => ({
+                ...party,
+                account_type: transaction.account_type,
+            })),
+        }));
+
+        const submitData = {
+            ...data,
+            submission_date: submissionDate,
+            transactions: updatedTransactions,
+        };
+
+        // Use transform so the form submits the updated payload (including account_type)
+        // Transform the payload for this submit so account_type and submission_date are sent
+        transform(() => submitData);
+
+        post("/reports", {
+            onSuccess: () => {
+                Swal.fire({
+                    icon: "success",
+                    title: "Success!",
+                    text: "Report created successfully",
+                    confirmButtonColor: "#002868",
+                    timer: 2500,
+                    timerProgressBar: true,
+                });
+            },
+            onError: (errors) => {
+                const firstError =
+                    errors?.duplicate_party ||
+                    Object.values(errors)[0] ||
+                    "Please check all required fields and try again";
+
+                Swal.fire({
+                    icon: "error",
+                    title:
+                        errors?.duplicate_party === undefined
+                            ? "Validation Failed"
+                            : "Duplicate Party Detected",
+                    text: firstError,
+                    confirmButtonColor: "#d33",
+                });
+            },
+        });
     };
 
     // Check if participating banks section should be shown based on transaction type and MOT
@@ -469,6 +527,39 @@ export default function Create({ reportType, transactionType, referenceData }) {
         }
     }, [data.transactions[0].parties]); // Trigger when parties array changes
 
+    // Handle account type changes - adjust number of parties
+    useEffect(() => {
+        const accountType = data.transactions[0].account_type;
+        const currentParties = data.transactions[0].parties;
+
+        if (accountType === "Individual" || accountType === "Corporate") {
+            // Limit to 1 party only
+            if (currentParties.length > 1) {
+                setData("transactions", [
+                    {
+                        ...data.transactions[0],
+                        parties: [currentParties[0]],
+                    },
+                ]);
+            }
+        } else if (accountType === "Joint") {
+            // Default to 2 parties for Joint Account
+            if (currentParties.length < 2) {
+                const newParties = [...currentParties];
+                // Add parties until we have 2
+                while (newParties.length < 2) {
+                    newParties.push({});
+                }
+                setData("transactions", [
+                    {
+                        ...data.transactions[0],
+                        parties: newParties,
+                    },
+                ]);
+            }
+        }
+    }, [data.transactions[0].account_type]); // Trigger when account type changes
+
     return (
         <AppLayout>
             <Head title={`Create ${reportType} Report`} />
@@ -528,6 +619,8 @@ export default function Create({ reportType, transactionType, referenceData }) {
                         addParty={addParty}
                         removeParty={removeParty}
                         transactionType={transactionType}
+                        accountType={data.transactions[0].account_type}
+                        updateTransaction={updateTransaction}
                     />
 
                     {/* Submit Button */}

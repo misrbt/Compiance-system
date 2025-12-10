@@ -63,6 +63,72 @@ export default function EditTransaction({
         return time;
     };
 
+    const formatNamesGrammatically = (names) => {
+        const count = names.length;
+
+        if (count === 0) {
+            return "";
+        }
+
+        if (count === 1) {
+            return names[0];
+        }
+
+        if (count === 2) {
+            return `${names[0]} and ${names[1]}`;
+        }
+
+        const allButLast = names.slice(0, count - 1);
+        const last = names[count - 1];
+
+        return `${allButLast.join(", ")}, and ${last}`;
+    };
+
+    const resolvePartyName = () => {
+        const transactions = report?.transactions || [];
+        const parties = transactions.flatMap((transaction) => transaction.parties || []);
+
+        const uniqueParties = parties.filter((party, index, array) => {
+            if (!party) {
+                return false;
+            }
+
+            if (party.id) {
+                return index === array.findIndex((candidate) => candidate?.id === party.id);
+            }
+
+            const key = `${party.first_name ?? ""}|${party.middle_name ?? ""}|${party.last_name ?? ""}`;
+
+            return (
+                index ===
+                array.findIndex((candidate) => {
+                    if (!candidate) {
+                        return false;
+                    }
+
+                    const candidateKey = `${candidate.first_name ?? ""}|${candidate.middle_name ?? ""}|${candidate.last_name ?? ""}`;
+
+                    return candidateKey === key;
+                })
+            );
+        });
+
+        const formattedNames = uniqueParties
+            .map((party) =>
+                [party.first_name, party.middle_name, party.last_name]
+                    .filter(Boolean)
+                    .join(" ")
+                    .trim()
+            )
+            .filter(Boolean);
+
+        const grammaticalNames = formatNamesGrammatically(formattedNames);
+
+        return grammaticalNames || partyName;
+    };
+
+    const displayPartyName = resolvePartyName();
+
     // Debug: Log the raw transaction data from the server
     console.log("📊 Raw report.transactions from server:", report.transactions);
 
@@ -139,7 +205,7 @@ export default function EditTransaction({
 
     return (
         <AppLayout>
-            <Head title={`Edit Transactions - ${partyName}`} />
+            <Head title={`Edit Transactions - ${displayPartyName}`} />
 
             <div className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
                 <Link
@@ -160,7 +226,7 @@ export default function EditTransaction({
                         </span>
                     </div>
                     <h1 className="text-3xl font-bold text-[#002868]">
-                        Edit Transactions for {partyName}
+                        Edit Transactions for {displayPartyName}
                     </h1>
                     <p className="mt-1 text-gray-600">
                         {data.transactions.length} transaction
