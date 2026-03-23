@@ -201,15 +201,31 @@ export const setAutoColumnWidths = (worksheet, formattedData) => {
     worksheet["!cols"] = colWidths;
 };
 
+const BANK_CODE = "004004825";
+
+/**
+ * Generate CTR filename in format: 004004825YYYYMMDDNNNN
+ * @param {string} sequenceNumber - 4-digit sequence number (e.g., "0001")
+ * @param {string} extension - File extension (e.g., "xlsx", "csv")
+ * @returns {string} Formatted filename
+ */
+const generateCtrFilename = (sequenceNumber = "0001", extension = "xlsx") => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${BANK_CODE}${year}${month}${day}${sequenceNumber.padStart(4, "0")}.${extension}`;
+};
+
 /**
  * Export CTR reports to Excel file
  */
-export const exportToExcel = (reports, filename, submissionType = "A") => {
+export const exportToExcel = (reports, sequenceNumber, submissionType = "A") => {
     if (!reports || reports.length === 0) {
         throw new Error("No reports to export");
     }
 
-    // Convert JSON data
+    // Convert data (already array-of-arrays)
     const formattedData = transformReportDataForExcel(reports);
 
     // Convert to array-of-arrays (AOA) for raw CTR-style output
@@ -254,15 +270,15 @@ export const exportToExcel = (reports, filename, submissionType = "A") => {
     const blob = new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
-    const defaultFilename = `CTR_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
-    saveAs(blob, filename || defaultFilename);
+    const ctrFilename = generateCtrFilename(sequenceNumber || "0001", "xlsx");
+    saveAs(blob, ctrFilename);
 };
 
 /**
  * Export CTR reports to CSV file
  * Note: CSV format does not support column widths or styling
  */
-export const exportToCSV = (reports, filename, submissionType = "A") => {
+export const exportToCSV = (reports, sequenceNumber, submissionType = "A") => {
     if (!reports || reports.length === 0) {
         throw new Error("No reports to export");
     }
@@ -277,6 +293,6 @@ export const exportToCSV = (reports, filename, submissionType = "A") => {
     const csv = XLSX.utils.sheet_to_csv(worksheet);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
 
-    const defaultFilename = `CTR_Report_${new Date().toISOString().slice(0, 10)}.csv`;
-    saveAs(blob, filename || defaultFilename);
+    const ctrFilename = generateCtrFilename(sequenceNumber || "0001", "csv");
+    saveAs(blob, ctrFilename);
 };

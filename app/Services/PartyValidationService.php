@@ -7,7 +7,7 @@ use App\Models\NameFlag;
 
 class PartyValidationService
 {
-    private const NAME_FLAGS_REQUIRING_LAST_NAME = ['J', 'CP', 'CO', 'S', 'O', 'U'];
+    private const NAME_FLAGS_REQUIRING_LAST_NAME = ['J', 'CP', 'CO', 'S', 'O', 'U', 'N'];
 
     /**
      * Validate last name is provided for specific name flags

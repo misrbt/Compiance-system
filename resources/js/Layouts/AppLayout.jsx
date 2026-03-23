@@ -69,7 +69,7 @@ export default function AppLayout({ children, title }) {
                             <nav className="hidden lg:flex space-x-1">
                                 {navigation.map((item) => {
                                     const Icon = item.icon;
-                                    const isActive = currentPath === item.href;
+                                       const isActive = currentPath === item.href;
                                     return (
                                         <Link
                                             key={item.name}
