@@ -52,7 +52,7 @@ class UpdateCtrReportRequest extends FormRequest
             'transactions.*.parties.*.id_type_id' => 'nullable|exists:id_types,id',
             'transactions.*.parties.*.id_no' => 'nullable|string',
             'transactions.*.parties.*.source_of_fund_id' => 'nullable|exists:source_of_funds,id',
-            'transactions.*.parties.*.contact_no' => ['nullable', 'string', 'regex:/^(\+63|\+\(63\)|0)[\s\-]?9\d{9}$/'],
+            'transactions.*.parties.*.contact_no' => ['nullable', 'string'],
             'transactions.*.parties.*.customer_reference_no' => 'nullable|string',
             'transactions.*.parties.*.old_acct_no' => 'nullable|string',
             'transactions.*.participating_banks' => 'nullable|array',

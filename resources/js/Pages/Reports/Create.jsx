@@ -321,14 +321,7 @@ export default function Create({ reportType, transactionType, referenceData }) {
 
         post("/reports", {
             onSuccess: () => {
-                Swal.fire({
-                    icon: "success",
-                    title: "Success!",
-                    text: "Report created successfully",
-                    confirmButtonColor: "#002868",
-                    timer: 2500,
-                    timerProgressBar: true,
-                });
+                // Flash message handled by BrowseCTR page after redirect
             },
             onError: (errors) => {
                 const firstError =
@@ -399,7 +392,7 @@ export default function Create({ reportType, transactionType, referenceData }) {
         );
         if (!nameFlag) return false;
         // Show last name ONLY for these specific name flag codes as per AMLA requirements
-        const codesRequiringLastName = ["J", "CP", "CO", "S", "O", "U"];
+        const codesRequiringLastName = ["J", "CP", "CO", "S", "O", "U", "N"];
         return codesRequiringLastName.includes(nameFlag.name_flag_code);
     };
 

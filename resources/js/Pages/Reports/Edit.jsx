@@ -314,7 +314,7 @@ export default function Edit({
             (f) => f.id === parseInt(nameFlagId)
         );
         if (!nameFlag) return false;
-        const codesRequiringLastName = ["J", "CP", "CO", "S", "O", "U"];
+        const codesRequiringLastName = ["J", "CP", "CO", "S", "O", "U", "N"];
         return codesRequiringLastName.includes(nameFlag.name_flag_code);
     };
 
