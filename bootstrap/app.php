@@ -3,7 +3,9 @@
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\PreventBackHistory;
 use App\Http\Middleware\PreventLoginCaching;
+use App\Http\Middleware\PreventPageCaching;
 use App\Http\Middleware\SetCurrentPortal;
+use App\Http\Middleware\TrustProxies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,8 +18,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->use([
+            TrustProxies::class,
+        ]);
+
         $middleware->web(append: [
             HandleInertiaRequests::class,
+            PreventPageCaching::class,
         ]);
 
         $middleware->alias([
