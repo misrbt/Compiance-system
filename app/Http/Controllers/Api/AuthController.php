@@ -4,47 +4,64 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRequest;
-use App\Http\Resources\Api\UserResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
     /**
-     * Authenticate a user and issue an API token.
+     * Authenticate via centralized auth API.
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        if (! Auth::attempt($request->only('email', 'password'))) {
+        $authApiUrl = config('services.central_auth.url', 'http://127.0.0.1:8001/api');
+
+        try {
+            $response = Http::timeout(10)->post("{$authApiUrl}/auth/login", [
+                'login' => $request->input('email'),
+                'password' => $request->input('password'),
+                'system_slug' => 'amla_report',
+            ]);
+
+            if ($response->successful() && $response->json('success')) {
+                return response()->json($response->json());
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'The provided credentials are incorrect.',
-            ], 401);
+                'message' => $response->json('message', 'The provided credentials are incorrect.'),
+            ], $response->status());
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication service is unavailable.',
+            ], 503);
         }
-
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-        $deviceName = $request->input('device_name', 'api-token');
-        $token = $user->createToken($deviceName)->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Login successful.',
-            'data' => [
-                'user' => new UserResource($user),
-                'token' => $token,
-                'token_type' => 'Bearer',
-            ],
-        ]);
     }
 
     /**
-     * Revoke the current API token (logout).
+     * Revoke token via centralized auth API.
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $authApiUrl = config('services.central_auth.url', 'http://127.0.0.1:8001/api');
+        $token = $request->bearerToken();
+
+        if ($token) {
+            try {
+                Http::timeout(5)
+                    ->withToken($token)
+                    ->post("{$authApiUrl}/auth/logout");
+            } catch (\Exception $e) {
+                // Ignore
+            }
+        }
+
+        // Also revoke local Sanctum token if exists
+        if ($request->user()?->currentAccessToken()) {
+            $request->user()->currentAccessToken()->delete();
+        }
 
         return response()->json([
             'success' => true,
@@ -53,15 +70,30 @@ class AuthController extends Controller
     }
 
     /**
-     * Return the authenticated user.
+     * Return the authenticated user via centralized auth API.
      */
     public function me(Request $request): JsonResponse
     {
+        $authApiUrl = config('services.central_auth.url', 'http://127.0.0.1:8001/api');
+        $token = $request->bearerToken();
+
+        if ($token) {
+            try {
+                $response = Http::timeout(5)
+                    ->withToken($token)
+                    ->get("{$authApiUrl}/auth/profile");
+
+                if ($response->successful()) {
+                    return response()->json($response->json());
+                }
+            } catch (\Exception $e) {
+                // Fall through
+            }
+        }
+
         return response()->json([
-            'success' => true,
-            'data' => [
-                'user' => new UserResource($request->user()),
-            ],
-        ]);
+            'success' => false,
+            'message' => 'Unauthenticated.',
+        ], 401);
     }
 }

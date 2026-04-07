@@ -44,6 +44,7 @@ class HandleInertiaRequests extends Middleware
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
                 ] : null,
+                'access' => $request->session()->get('central_auth_access'),
             ],
             'flash' => [
                 'success' => $request->session()->get('success'),
